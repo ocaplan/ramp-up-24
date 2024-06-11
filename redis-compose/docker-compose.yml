@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis-service
+    ports:
+      - "6379:6379"
+
+  publisher:
+    build:
+      context: .
+      dockerfile: Dockerfile.publisher
+    container_name: redis-publisher
+    depends_on:
+      - redis
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+
+  subscriber:
+    build:
+      context: .
+      dockerfile: Dockerfile.subscriber
+    container_name: redis-subscriber
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
