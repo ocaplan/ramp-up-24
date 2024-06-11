@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 
 app = FastAPI()
 
@@ -14,8 +14,7 @@ books = []
 
 @app.post("/books/", response_model=Book)
 def create_book(book: Book):
-    if any(b.id == book.id for b in books):
-        raise HTTPException(status_code=400, detail="Book with this ID already exists")
+    book.id = len(books) + 1
     books.append(book)
     return book
 
@@ -25,23 +24,24 @@ def get_books():
 
 @app.get("/books/{book_id}", response_model=Book)
 def get_book(book_id: int):
-    book = next((b for b in books if b.id == book_id), None)
-    if book is None:
-        raise HTTPException(status_code=404, detail="Book not found")
-    return book
+    for book in books:
+        if book.id == book_id:
+            return book
+    raise HTTPException(status_code=404, detail="Book not found")
 
 @app.put("/books/{book_id}", response_model=Book)
 def update_book(book_id: int, updated_book: Book):
     for index, book in enumerate(books):
         if book.id == book_id:
             books[index] = updated_book
-            return updated_book
+            books[index].id = book_id
+            return books[index]
     raise HTTPException(status_code=404, detail="Book not found")
 
-@app.delete("/books/{book_id}", response_model=Book)
+@app.delete("/books/{book_id}")
 def delete_book(book_id: int):
-    book = next((b for b in books if b.id == book_id), None)
-    if book is None:
-        raise HTTPException(status_code=404, detail="Book not found")
-    books.remove(book)
-    return book
+    for index, book in enumerate(books):
+        if book.id == book_id:
+            del books[index]
+            return {"message": "Book deleted successfully"}
+    raise HTTPException(status_code=404, detail="Book not found")
